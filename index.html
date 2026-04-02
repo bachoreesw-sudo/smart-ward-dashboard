@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Ward - Command Center</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
+    <style>
+        /* ตกแต่งหน้าตาเว็บ (CSS) */
+        body { 
+            background-color: #0f172a; 
+            color: white; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+        }
+        .dashboard { 
+            text-align: center; 
+            background: #1e293b; 
+            padding: 40px; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6); 
+            width: 90%; 
+            max-width: 600px; 
+        }
+        h1 { color: #38bdf8; margin-top: 0; font-size: 2.2rem; }
+        p { color: #94a3b8; margin-bottom: 30px; font-size: 1.1rem; }
+        
+        /* วงแหวนบอกจำนวนคน (Real-time) */
+        .circle { 
+            width: 220px; height: 220px; 
+            border: 15px solid #10b981; 
+            border-radius: 50%; 
+            display: flex; justify-content: center; align-items: center; 
+            font-size: 90px; font-weight: bold; 
+            margin: 0 auto 20px auto; 
+            transition: all 0.5s ease;
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.2);
+            text-shadow: 0 0 20px rgba(255,255,255,0.3);
+        }
+        .status { font-size: 1.4rem; font-weight: bold; margin-bottom: 30px; }
+
+        /* กล่องสถิติ (Statistics) */
+        .stats-container { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr 1fr; 
+            gap: 15px; 
+            border-top: 1px solid #334155;
+            padding-top: 30px;
+        }
+        .stat-box { 
+            background: #334155; 
+            padding: 20px 10px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2); 
+            transition: transform 0.3s;
+        }
+        .stat-box:hover { transform: translateY(-5px); }
+        .stat-label { font-size: 0.9rem; color: #cbd5e1; margin-bottom: 8px; }
+        .stat-value { font-size: 2rem; font-weight: bold; color: #38bdf8; }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard">
+        <h1>📡 Smart Ward Radar</h1>
+        <p>ระบบตรวจสอบความหนาแน่นพื้นที่แบบ Real-time</p>
+        
+        <div class="circle" id="density-circle">0</div>
+        <div class="status" id="status-text">สถานะ: กำลังเชื่อมต่อ...</div>
+
+        <div class="stats-container">
+            <div class="stat-box">
+                <div class="stat-label">เฉลี่ย 1 นาที</div>
+                <div class="stat-value" id="avg-1min">0.0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">เฉลี่ย 1 ชม.</div>
+                <div class="stat-value" id="avg-1hr">0.0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">เฉลี่ย 1 วัน</div>
+                <div class="stat-value" id="avg-1day">0.0</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ---------------------------------------------------------
+        // 🔴 1. ใส่ API Key และ Database URL ของคุณตรงนี้ 🔴
+        // ---------------------------------------------------------
+        const firebaseConfig = {
+            apiKey: "AIzaSyBCdf2i_RAd6G7TqkNdNZB5qrzOyunJwKs",
+            databaseURL: "https://flutter-ai-playground-897bf-default-rtdb.firebaseio.com/"
+        };
+
+        // เริ่มต้นการเชื่อมต่อ Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // ---------------------------------------------------------
+        // 🟢 2. ดึงข้อมูลตัวเลขล่าสุดมาโชว์ในวงกลม (Real-time)
+        // ---------------------------------------------------------
+        const densityRef = db.ref('SmartWard/currentDensity');
+        const circle = document.getElementById('density-circle');
+        const statusText = document.getElementById('status-text');
+
+        densityRef.on('value', (snapshot) => {
+            const count = snapshot.val() || 0;
+            circle.innerText = count;
+
+            // เปลี่ยนสีตามความหนาแน่น
+            if(count < 10) {
+                circle.style.borderColor = "#10b981"; // สีเขียว
+                circle.style.boxShadow = "0 0 30px rgba(16, 185, 129, 0.4)";
+                statusText.innerText = "สถานะ: ปกติ (โล่งสบาย)";
+                statusText.style.color = "#10b981";
+            } else if(count < 20) {
+                circle.style.borderColor = "#f59e0b"; // สีเหลือง
+                circle.style.boxShadow = "0 0 30px rgba(245, 158, 11, 0.4)";
+                statusText.innerText = "สถานะ: เริ่มหนาแน่น";
+                statusText.style.color = "#f59e0b";
+            } else {
+                circle.style.borderColor = "#ef4444"; // สีแดง
+                circle.style.boxShadow = "0 0 30px rgba(239, 68, 68, 0.4)";
+                statusText.innerText = "สถานะ: แออัด! โปรดระบายคน";
+                statusText.style.color = "#ef4444";
+            }
+        });
+
+        // ---------------------------------------------------------
+        // 🔵 3. ดึงข้อมูลประวัติมาคำนวณค่าเฉลี่ย (Statistics)
+        // ---------------------------------------------------------
+        const historyRef = db.ref('SmartWard/history');
+        
+        historyRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            
+            // ถ้ายังไม่มีข้อมูลประวัติเลย ให้หยุดการทำงานตรงนี้ก่อน
+            if (!data) return; 
+
+            const values = Object.values(data);
+            
+            // สมมติบอร์ดส่งข้อมูลทุกๆ 30 วินาที 
+            // 1 นาที = 2 ข้อมูลล่าสุด
+            // 1 ชั่วโมง = 120 ข้อมูลล่าสุด
+            const last60 = values.slice(-2); 
+            const lastHr = values.slice(-120); 
+
+            // ฟังก์ชันช่วยหาค่าเฉลี่ย
+            const getAverage = (arr) => {
+                if(arr.length === 0) return "0.0";
+                const sum = arr.reduce((a, b) => a + b, 0);
+                return (sum / arr.length).toFixed(1);
+            };
+
+            // อัปเดตตัวเลขลงในกล่องสถิติ
+            document.getElementById('avg-1min').innerText = getAverage(last60);
+            document.getElementById('avg-1hr').innerText = getAverage(lastHr);
+            document.getElementById('avg-1day').innerText = getAverage(values);
+        });
+    </script>
+</body>
+</html>
