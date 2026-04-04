@@ -3,168 +3,425 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Ward - Command Center</title>
-    
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <title>NEXUS SYS - Smart Station</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
     
     <style>
-        /* ตกแต่งหน้าตาเว็บ (CSS) */
-        body { 
-            background-color: #0f172a; 
-            color: white; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
-            margin: 0; 
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(20, 25, 35, 0.7);
+            --neon-blue: #00f3ff;
+            --neon-green: #00ff66;
+            --neon-red: #ff003c;
+            --neon-yellow: #ffdd00;
         }
-        .dashboard { 
-            text-align: center; 
-            background: #1e293b; 
-            padding: 40px; 
-            border-radius: 20px; 
-            box-shadow: 0 10px 40px rgba(0,0,0,0.6); 
-            width: 90%; 
-            max-width: 600px; 
-        }
-        h1 { color: #38bdf8; margin-top: 0; font-size: 2.2rem; }
-        p { color: #94a3b8; margin-bottom: 30px; font-size: 1.1rem; }
-        
-        /* วงแหวนบอกจำนวนคน (Real-time) */
-        .circle { 
-            width: 220px; height: 220px; 
-            border: 15px solid #10b981; 
-            border-radius: 50%; 
-            display: flex; justify-content: center; align-items: center; 
-            font-size: 90px; font-weight: bold; 
-            margin: 0 auto 20px auto; 
-            transition: all 0.5s ease;
-            box-shadow: 0 0 30px rgba(16, 185, 129, 0.2);
-            text-shadow: 0 0 20px rgba(255,255,255,0.3);
-        }
-        .status { font-size: 1.4rem; font-weight: bold; margin-bottom: 30px; }
 
-        /* กล่องสถิติ (Statistics) */
-        .stats-container { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr 1fr; 
-            gap: 15px; 
-            border-top: 1px solid #334155;
-            padding-top: 30px;
+        body {
+            background-color: var(--bg-color);
+            color: #ffffff;
+            font-family: 'Prompt', sans-serif;
+            background-image: radial-gradient(circle at 50% 0%, #1a233a 0%, #0b0f19 70%);
+            min-height: 100vh;
         }
-        .stat-box { 
-            background: #334155; 
-            padding: 20px 10px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2); 
-            transition: transform 0.3s;
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
         }
-        .stat-box:hover { transform: translateY(-5px); }
-        .stat-label { font-size: 0.9rem; color: #cbd5e1; margin-bottom: 8px; }
-        .stat-value { font-size: 2rem; font-weight: bold; color: #38bdf8; }
+
+        .ph-circle-container { display: flex; justify-content: center; align-items: center; margin: 20px 0; }
+        .ph-circle {
+            width: 200px; height: 200px; border-radius: 50%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            border: 5px solid var(--neon-green);
+            box-shadow: 0 0 30px var(--neon-green), inset 0 0 20px var(--neon-green);
+            transition: all 0.5s ease;
+        }
+        .ph-value { font-family: 'Orbitron', sans-serif; font-size: 3.5rem; font-weight: 700; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        .ph-label { font-size: 1rem; color: #aaa; text-transform: uppercase; letter-spacing: 2px; }
+
+        .trash-card { border-left: 5px solid var(--neon-yellow); background: linear-gradient(90deg, rgba(255,221,0,0.1) 0%, transparent 100%); }
+
+        .btn-cyber { background: transparent; color: var(--neon-blue); border: 1px solid var(--neon-blue); font-family: 'Orbitron', sans-serif; transition: 0.3s; }
+        .btn-cyber:hover { background: var(--neon-blue); color: #000; box-shadow: 0 0 20px var(--neon-blue); }
+        
+        .btn-action-on { background: rgba(0,255,102,0.1); border: 1px solid var(--neon-green); color: var(--neon-green); }
+        .btn-action-on:hover { background: var(--neon-green); color: #000; box-shadow: 0 0 20px var(--neon-green); }
+        .btn-action-off { background: rgba(255,0,60,0.1); border: 1px solid var(--neon-red); color: var(--neon-red); }
+        .btn-action-off:hover { background: var(--neon-red); color: #fff; box-shadow: 0 0 20px var(--neon-red); }
+
+        /* การซ่อน/โชว์ หน้าเว็บ */
+        .page-section { display: none; animation: fadeIn 0.4s; }
+        .page-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        .form-control, .form-control:focus { background: rgba(0,0,0,0.5); border: 1px solid #333; color: #fff; }
     </style>
 </head>
 <body>
 
-    <div class="dashboard">
-        <h1>📡 Smart Ward Radar</h1>
-        <p>ระบบตรวจสอบความหนาแน่นพื้นที่แบบ Real-time</p>
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
+        <h2 style="font-family: 'Orbitron', sans-serif; text-shadow: 0 0 10px var(--neon-blue);"><i class="fa-solid fa-satellite-dish text-info"></i> BKR NEXUS SYS</h2>
         
-        <div class="circle" id="density-circle">0</div>
-        <div class="status" id="status-text">สถานะ: กำลังเชื่อมต่อ...</div>
+        <div class="d-flex align-items-center gap-2">
+            <div id="mode-indicator" class="badge border border-success text-success" style="background: rgba(0,255,102,0.1); font-family: 'Orbitron', sans-serif; padding: 8px 12px; letter-spacing: 1px;">
+                <i class="fa-solid fa-wifi"></i> CLOUD MODE
+            </div>
+            <button class="btn btn-sm btn-cyber" onclick="connectBluetooth()" style="border-radius: 50%; width: 35px; height: 35px; padding: 0;" title="เชื่อมต่อ Bluetooth Gateway">
+                <i class="fa-brands fa-bluetooth-b"></i>
+            </button>
+        </div>
+    </div>
+    <div id="page-home" class="page-section active">
+        <div class="row">
+            <div class="col-md-5">
+                <div class="glass-card text-center h-100">
+                    <h5 class="text-secondary"><i class="fa-solid fa-droplet"></i> REALTIME pH SENSOR</h5>
+                    <div class="ph-circle-container">
+                        <div class="ph-circle" id="ph-circle-ui">
+                            <div class="ph-value" id="ph-display">0.00</div>
+                            <div class="ph-label">pH Level</div>
+                        </div>
+                    </div>
+                    
+                    <div class="glass-card trash-card mt-4 text-start">
+                        <div class="d-flex align-items-center">
+                            <i class="fa-solid fa-triangle-exclamation text-warning fs-3 me-3"></i>
+                            <div>
+                                <h6 class="mb-0 text-warning fw-bold">สถานะขยะเต็ม (Ultrasonic)</h6>
+                                <small class="text-light" id="trash-time-display">ตรวจพบครั้งล่าสุด: --:-- น.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        <div class="stats-container">
-            <div class="stat-box">
-                <div class="stat-label">เฉลี่ย 1 นาที</div>
-                <div class="stat-value" id="avg-1min">0.0</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-label">เฉลี่ย 1 ชม.</div>
-                <div class="stat-value" id="avg-1hr">0.0</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-label">เฉลี่ย 1 วัน</div>
-                <div class="stat-value" id="avg-1day">0.0</div>
+            <div class="col-md-7">
+                <div class="glass-card h-100">
+                    <div class="d-flex justify-content-between mb-3">
+                        <h5 class="text-secondary"><i class="fa-solid fa-chart-line"></i> TODAY'S DATA</h5>
+                        <div>
+                            <span class="badge bg-danger me-2" id="today-max-ph">Max: --</span>
+                            <span class="badge bg-info" id="today-min-ph">Min: --</span>
+                        </div>
+                    </div>
+                    <canvas id="todayChart" height="150"></canvas>
+                    
+                    <div class="row mt-4">
+                        <div class="col-6 d-grid">
+                            <button class="btn btn-cyber" onclick="navTo('page-relay')">
+                                <i class="fa-solid fa-bolt"></i> ระบบควบคุมปั้มน้ำ (Relay)
+                            </button>
+                        </div>
+                        <div class="col-6 d-grid">
+                            <button class="btn btn-cyber" onclick="navTo('page-history')">
+                                <i class="fa-solid fa-database"></i> ดูประวัติย้อนหลัง
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <script>
-        // ---------------------------------------------------------
-        // 🔴 1. ใส่ API Key และ Database URL ของคุณตรงนี้ 🔴
-        // ---------------------------------------------------------
-        const firebaseConfig = {
-            apiKey: "AIzaSyBCdf2i_RAd6G7TqkNdNZB5qrzOyunJwKs",
-            databaseURL: "https://flutter-ai-playground-897bf-default-rtdb.firebaseio.com/"
-        };
+    <div id="page-relay" class="page-section">
+        <button class="btn btn-outline-secondary mb-3" onclick="navTo('page-home')"><i class="fa-solid fa-arrow-left"></i> กลับหน้าหลัก</button>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="glass-card h-100">
+                    <h5 class="text-secondary mb-4"><i class="fa-solid fa-power-off"></i> MANUAL & COUNTDOWN</h5>
+                    <div class="text-center mb-4">
+                        <h6 class="text-muted">สถานะปัจจุบัน</h6>
+                        <h3 id="relay-status-text" class="text-danger fw-bold">OFF</h3>
+                    </div>
+                    <div class="d-flex gap-3 mb-4">
+                        <button class="btn btn-action-on flex-fill py-3 fs-5" onclick="setRelay(true)">TURN ON</button>
+                        <button class="btn btn-action-off flex-fill py-3 fs-5" onclick="setRelay(false)">TURN OFF</button>
+                    </div>
+                    <hr class="border-secondary">
+                    <h6 class="text-info mt-3"><i class="fa-solid fa-stopwatch"></i> จับเวลาปิดอัตโนมัติ</h6>
+                    <div class="input-group mt-2">
+                        <input type="number" id="countdown-input" class="form-control" placeholder="ระบุนาที..." min="1">
+                        <button class="btn btn-outline-info" onclick="setCountdown()">เริ่มจับเวลา</button>
+                    </div>
+                </div>
+            </div>
 
-        // เริ่มต้นการเชื่อมต่อ Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+            <div class="col-md-6">
+                <div class="glass-card h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="text-secondary mb-0"><i class="fa-solid fa-clock"></i> SCHEDULE TIMER</h5>
+                        <button class="btn btn-sm btn-outline-success" onclick="addScheduleSlot()"><i class="fa-solid fa-plus"></i> เพิ่ม</button>
+                    </div>
+                    <div id="schedule-container"></div>
+                    <button class="btn btn-cyber w-100 mt-3" onclick="saveSchedules()">บันทึกตารางเวลาเข้าระบบ</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        // ---------------------------------------------------------
-        // 🟢 2. ดึงข้อมูลตัวเลขล่าสุดมาโชว์ในวงกลม (Real-time)
-        // ---------------------------------------------------------
-        const densityRef = db.ref('SmartWard/currentDensity');
-        const circle = document.getElementById('density-circle');
-        const statusText = document.getElementById('status-text');
+    <div id="page-history" class="page-section">
+        <button class="btn btn-outline-secondary mb-3" onclick="navTo('page-home')"><i class="fa-solid fa-arrow-left"></i> กลับหน้าหลัก</button>
+        
+        <div class="glass-card">
+            <h5 class="text-secondary mb-3"><i class="fa-regular fa-calendar-days"></i> ดูข้อมูลรายวัน</h5>
+            <div class="input-group mb-4" style="max-width: 300px;">
+                <input type="date" id="history-date" class="form-control">
+                <button class="btn btn-outline-info" onclick="loadSpecificHistory()">ดึงข้อมูล</button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-dark table-hover table-borderless">
+                    <thead style="border-bottom: 2px solid var(--neon-blue);">
+                        <tr><th>เวลา (Time)</th><th>ค่า pH</th><th>ระยะทาง (cm)</th></tr>
+                    </thead>
+                    <tbody id="history-table-body">
+                        <tr><td colspan="3" class="text-center text-muted">เลือกวันที่เพื่อดูข้อมูล</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
-        densityRef.on('value', (snapshot) => {
-            const count = snapshot.val() || 0;
-            circle.innerText = count;
+<script>
+    // ฟังก์ชันนี้ทำงานได้ทันที ไม่ต้องรอ Firebase
+    function navTo(pageId) {
+        document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        window.scrollTo(0, 0); // เลื่อนขึ้นบนสุดเมื่อเปลี่ยนหน้า
+    }
 
-            // เปลี่ยนสีตามความหนาแน่น
-            if(count < 10) {
-                circle.style.borderColor = "#10b981"; // สีเขียว
-                circle.style.boxShadow = "0 0 30px rgba(16, 185, 129, 0.4)";
-                statusText.innerText = "สถานะ: ปกติ (โล่งสบาย)";
-                statusText.style.color = "#10b981";
-            } else if(count < 20) {
-                circle.style.borderColor = "#f59e0b"; // สีเหลือง
-                circle.style.boxShadow = "0 0 30px rgba(245, 158, 11, 0.4)";
-                statusText.innerText = "สถานะ: เริ่มหนาแน่น";
-                statusText.style.color = "#f59e0b";
-            } else {
-                circle.style.borderColor = "#ef4444"; // สีแดง
-                circle.style.boxShadow = "0 0 30px rgba(239, 68, 68, 0.4)";
-                statusText.innerText = "สถานะ: แออัด! โปรดระบายคน";
-                statusText.style.color = "#ef4444";
+    // ฟังก์ชันเพิ่มช่องตารางเวลาในหน้า UI
+    let scheduleCount = 0;
+    function addScheduleSlot(start = "", end = "") {
+        scheduleCount++;
+        const container = document.getElementById('schedule-container');
+        const slotHtml = `
+            <div class="row g-2 mb-2 align-items-center schedule-row" id="slot-${scheduleCount}">
+                <div class="col-5"><input type="time" class="form-control start-time" value="${start}"></div>
+                <div class="col-1 text-center">ถึง</div>
+                <div class="col-5"><input type="time" class="form-control end-time" value="${end}"></div>
+                <div class="col-1 text-end">
+                    <button class="btn btn-outline-danger btn-sm" onclick="document.getElementById('slot-${scheduleCount}').remove()">X</button>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', slotHtml);
+    }
+</script>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, onValue, set, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBDq_9EK3HAcgeecJEbpR5HVqzkuWhfmDk",
+        databaseURL: "flutter-ai-playground-84f49-default-rtdb.firebaseio.com",
+        projectId: "flutter-ai-playground-84f49"
+    };
+
+    let db;
+    try {
+        const app = initializeApp(firebaseConfig);
+        db = getDatabase(app);
+    } catch (error) {
+        console.error("Firebase init error:", error);
+    }
+
+    // === ตัวแปรสำหรับ Bluetooth ===
+    let bleRelayChar = null;
+
+    if (db) {
+        // อัปเดตวงกลม pH
+        onValue(ref(db, 'sensor/ph'), (snapshot) => {
+            const val = snapshot.val() || 0;
+            document.getElementById('ph-display').innerText = val.toFixed(2);
+            const circle = document.getElementById('ph-circle-ui');
+            let color = 'var(--neon-green)';
+            if (val < 6.5) color = 'var(--neon-yellow)';
+            if (val > 7.5) color = 'var(--neon-red)';
+            circle.style.borderColor = color;
+            circle.style.boxShadow = `0 0 30px ${color}, inset 0 0 20px ${color}`;
+        });
+
+        // อัปเดตแจ้งเตือนขยะ
+        onValue(ref(db, 'sensor/distance'), (snapshot) => {
+            const dist = snapshot.val() || 0;
+            if(dist > 0 && dist < 30) {
+                const now = new Date();
+                const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+                document.getElementById('trash-time-display').innerText = `ตรวจพบครั้งล่าสุด: วันนี้เวลา ${timeStr} น.`;
+                set(ref(db, 'sensor/last_trash_time'), timeStr);
             }
         });
 
-        // ---------------------------------------------------------
-        // 🔵 3. ดึงข้อมูลประวัติมาคำนวณค่าเฉลี่ย (Statistics)
-        // ---------------------------------------------------------
-        const historyRef = db.ref('SmartWard/history');
-        
-        historyRef.on('value', (snapshot) => {
-            const data = snapshot.val();
-            
-            // ถ้ายังไม่มีข้อมูลประวัติเลย ให้หยุดการทำงานตรงนี้ก่อน
-            if (!data) return; 
-
-            const values = Object.values(data);
-            
-            // สมมติบอร์ดส่งข้อมูลทุกๆ 30 วินาที 
-            // 1 นาที = 2 ข้อมูลล่าสุด
-            // 1 ชั่วโมง = 120 ข้อมูลล่าสุด
-            const last60 = values.slice(-2); 
-            const lastHr = values.slice(-120); 
-
-            // ฟังก์ชันช่วยหาค่าเฉลี่ย
-            const getAverage = (arr) => {
-                if(arr.length === 0) return "0.0";
-                const sum = arr.reduce((a, b) => a + b, 0);
-                return (sum / arr.length).toFixed(1);
-            };
-
-            // อัปเดตตัวเลขลงในกล่องสถิติ
-            document.getElementById('avg-1min').innerText = getAverage(last60);
-            document.getElementById('avg-1hr').innerText = getAverage(lastHr);
-            document.getElementById('avg-1day').innerText = getAverage(values);
+        onValue(ref(db, 'sensor/last_trash_time'), (snapshot) => {
+            if(snapshot.exists()) {
+                document.getElementById('trash-time-display').innerText = `ตรวจพบครั้งล่าสุด: เวลา ${snapshot.val()} น.`;
+            }
         });
-    </script>
+
+        // ระบบควบคุม Relay
+        onValue(ref(db, 'control/relay'), (snapshot) => {
+            const status = snapshot.val();
+            const textEl = document.getElementById('relay-status-text');
+            textEl.innerText = status ? "ON" : "OFF";
+            textEl.className = status ? "text-success fw-bold text-shadow-glow" : "text-danger fw-bold";
+        });
+
+        // === อัปเดตฟังก์ชัน Relay ให้รองรับ Bluetooth ควบคู่กับ Firebase ===
+        window.setRelay = async function(state) { 
+            // สั่งงานผ่าน Bluetooth หากเชื่อมต่ออยู่ (รวดเร็วทันใจ)
+            if (bleRelayChar) {
+                try {
+                    await bleRelayChar.writeValue(new Uint8Array([state ? 49 : 48])); // '1' หรือ '0'
+                } catch(e) { console.error("BLE Send Error", e); }
+            }
+            // อัปเดตขึ้น Cloud (Firebase) ตามปกติ
+            set(ref(db, 'control/relay'), state); 
+        };
+
+        window.setCountdown = function() {
+            const mins = parseInt(document.getElementById('countdown-input').value);
+            if (mins > 0) {
+                update(ref(db, 'control'), { relay: true, timer_minutes: mins });
+                alert(`เปิดระบบทำงาน และจะปิดอัตโนมัติใน ${mins} นาที`);
+            }
+        };
+
+        // ระบบ Schedule
+        window.saveSchedules = function() {
+            const rows = document.querySelectorAll('.schedule-row');
+            let schedules = {};
+            rows.forEach((row, index) => {
+                const start = row.querySelector('.start-time').value;
+                const end = row.querySelector('.end-time').value;
+                if(start && end) schedules[`slot_${index}`] = { start: start, end: end };
+            });
+            set(ref(db, 'control/schedules'), schedules);
+            alert("บันทึกตารางเวลาเข้าระบบสำเร็จ!");
+        };
+
+        get(ref(db, 'control/schedules')).then((snapshot) => {
+            if(snapshot.exists()) {
+                const data = snapshot.val();
+                for(let key in data) { addScheduleSlot(data[key].start, data[key].end); }
+            } else {
+                addScheduleSlot("08:00", "10:00");
+            }
+        });
+
+        // กราฟวันนี้
+        const todayStr = new Date().toISOString().split('T')[0];
+        document.getElementById('history-date').value = todayStr;
+        let todayChart;
+        Chart.defaults.color = '#aaa';
+
+        onValue(ref(db, 'history/' + todayStr), (snapshot) => {
+            if(snapshot.exists()) {
+                const data = snapshot.val();
+                let labels = []; let phData = []; let max = -99; let min = 99;
+                for(let time in data) {
+                    labels.push(time);
+                    let ph = data[time].ph || data[time]; // เผื่อโครงสร้างข้อมูลเปลี่ยน
+                    phData.push(ph);
+                    if(ph > max) max = ph;
+                    if(ph < min) min = ph;
+                }
+                document.getElementById('today-max-ph').innerText = `Max: ${max.toFixed(2)}`;
+                document.getElementById('today-min-ph').innerText = `Min: ${min.toFixed(2)}`;
+
+                if(todayChart) todayChart.destroy();
+                const ctx = document.getElementById('todayChart').getContext('2d');
+                todayChart = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: labels, datasets: [{ label: 'pH Level', data: phData, borderColor: '#00f3ff', backgroundColor: 'rgba(0, 243, 255, 0.1)', borderWidth: 2, fill: true, tension: 0.4 }] },
+                    options: { responsive: true, scales: { x: { display: false }, y: { min: 0, max: 14 } } }
+                });
+            }
+        });
+
+        // ตารางย้อนหลัง
+        window.loadSpecificHistory = function() {
+            const date = document.getElementById('history-date').value;
+            const tbody = document.getElementById('history-table-body');
+            tbody.innerHTML = `<tr><td colspan="3" class="text-center text-info"><i class="fa-solid fa-spinner fa-spin"></i> กำลังโหลด...</td></tr>`;
+            get(ref(db, 'history/' + date)).then((snapshot) => {
+                tbody.innerHTML = "";
+                if(snapshot.exists()) {
+                    const data = snapshot.val();
+                    for(let time in data) {
+                        let ph = data[time].ph || data[time];
+                        let dist = data[time].distance || data[time].dist || 0;
+                        tbody.innerHTML += `<tr><td>${time}</td><td><span class="text-info">${ph.toFixed(2)}</span></td><td>${dist.toFixed(1)}</td></tr>`;
+                    }
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted">ไม่พบข้อมูลของวันที่เลือก</td></tr>`;
+                }
+            });
+        };
+        loadSpecificHistory();
+    }
+
+    // === ระบบ Bluetooth Gateway (เพิ่มใหม่ โค้ดเดิมไม่กระทบ) ===
+    window.connectBluetooth = async function() {
+        const indicator = document.getElementById('mode-indicator');
+        try {
+            indicator.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> SCANNING...`;
+            
+            const device = await navigator.bluetooth.requestDevice({
+                filters: [{ name: 'ESP32_Agri_Board' }], // ชื่อบอร์ดใน ESP32
+                optionalServices: ['19b10000-e8f2-537e-4f6c-d104768a1214']
+            });
+            
+            const server = await device.gatt.connect();
+            const service = await server.getPrimaryService('19b10000-e8f2-537e-4f6c-d104768a1214');
+            
+            // อ่านค่า Sensor ผ่าน BLE
+            const sensorChar = await service.getCharacteristic('19b10001-e8f2-537e-4f6c-d104768a1214');
+            await sensorChar.startNotifications();
+            sensorChar.addEventListener('characteristicvaluechanged', (event) => {
+                let data = JSON.parse(new TextDecoder().decode(event.target.value));
+                // โยนขึ้น Firebase ผ่านเน็ตมือถือ (Gateway)
+                if(db) {
+                    set(ref(db, 'sensor/ph'), data.ph);
+                    set(ref(db, 'sensor/distance'), data.dist);
+                }
+            });
+
+            // เชื่อมช่องสัญญาณส่งคำสั่ง Relay
+            bleRelayChar = await service.getCharacteristic('19b10002-e8f2-537e-4f6c-d104768a1214');
+            
+            // เปลี่ยนสถานะมุมขวาบนให้เป็นสีฟ้า (Bluetooth Mode)
+            indicator.className = "badge border border-info text-info";
+            indicator.style.background = "rgba(0, 243, 255, 0.1)";
+            indicator.innerHTML = `<i class="fa-brands fa-bluetooth-b"></i> BLE GATEWAY`;
+            
+            // ดักจับเมื่อบลูทูธหลุด ให้กลับไปโหมด Wi-Fi สีเขียว
+            device.addEventListener('gattserverdisconnected', () => {
+                indicator.className = "badge border border-success text-success";
+                indicator.style.background = "rgba(0, 255, 102, 0.1)";
+                indicator.innerHTML = `<i class="fa-solid fa-wifi"></i> CLOUD MODE`;
+                bleRelayChar = null;
+            });
+            
+        } catch(e) {
+            console.error("Bluetooth Error:", e);
+            indicator.className = "badge border border-success text-success";
+            indicator.innerHTML = `<i class="fa-solid fa-wifi"></i> CLOUD MODE`;
+        }
+    };
+</script>
+
 </body>
 </html>
